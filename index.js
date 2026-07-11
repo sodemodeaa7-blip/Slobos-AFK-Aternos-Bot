@@ -1,49 +1,61 @@
 const bedrock = require('bedrock-protocol');
 const express = require('express');
-const settings = require('./settings.json');
 
-// 1. تشغيل سيرفر ويب خفيف متوافق مع Render لمنع توقف الخدمة
+// 1. تشغيل سيرفر الويب لـ Render لمنع توقف البوت
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-  res.send('البوت يعمل بنجاح ومستمر في تشغيل السيرفر!');
+  res.send('البوت يعمل ومستمر في تشغيل السيرفر!');
 });
 
 app.listen(PORT, () => {
-  console.log(`سيرفر الويب يعمل على المنفذ: ${PORT}`);
+  console.log(`سيرفر الويب يعمل بنجاح على المنفذ: ${PORT}`);
 });
 
-// 2. إعدادات اتصال البوت بالسيرفر (Bedrock)
+// 2. إعدادات اتصال البيدروك المتقدمة لتخطي الـ Timeout
 const botOptions = {
-  host: settings.ip,
-  port: parseInt(settings.port),
-  username: settings.botName,
-  offline: true // إجباري: لأن سيرفرات أترنوس تستخدم وضع Cracked للبوتات
+  // استخدم الـ Dyn IP المباشر الذي أرسلته بدون تغيير
+  host: 'danio.aternos.host', 
+  port: 49435, 
+  username: 'Bedrock_AFK_Bot',
+  offline: true,               // إجباري لسيرفرات أترنوس المكركة
+  
+  // حل المشكلة: إجبار المكتبة على تخطي مرحلة الـ Ping التي يحظرها Render
+  skipPing: true,              
+  
+  // قم بكتابة إصدار Minecraft البيدروك الخاص بسيرفرك هنا (مثال: '1.21.0')
+  // إذا لم تكن متأكداً، اتركها '1.20.80' أو الإصدار الحالي لسيرفرك في أترنوس
+  version: '1.26.32.2'            
 };
 
 function startBot() {
-  console.log('جاري الاتصال بسيرفر أترنوس بيدروك...');
-  const client = bedrock.createClient(botOptions);
+  console.log('جاري الاتصال المباشر عبر بروتوكول البيدروك (بدون Ping)...');
+  
+  try {
+    const client = bedrock.createClient(botOptions);
 
-  client.on('spawn', () => {
-    console.log(`[نجاح] البوت ${botOptions.username} دخل السيرفر الآن!`);
-  });
+    client.on('spawn', () => {
+      console.log(`[نجاح] البوت دخل السيرفر الآن واستقر في العالم!`);
+    });
 
-  client.on('text', (packet) => {
-    // عرض شات السيرفر في الكونسول لمراقبة الوضع
-    console.log(`[Chat] ${packet.source_name}: ${packet.message}`);
-  });
+    client.on('text', (packet) => {
+      console.log(`[شات السيرفر] ${packet.source_name}: ${packet.message}`);
+    });
 
-  client.on('close', (reason) => {
-    console.log(`تم الفصل بسبب: ${reason}. جاري إعادة المحاولة بعد 20 ثانية...`);
-    setTimeout(startBot, 20000); // إعادة اتصال تلقائي في حال ريستارت السيرفر
-  });
+    client.on('close', (reason) => {
+      console.log(`انقطع الاتصال. السبب: ${reason}. إعادة المحاولة بعد 20 ثانية...`);
+      setTimeout(startBot, 20000);
+    });
 
-  client.on('error', (err) => {
-    console.error('حدث خطأ في الاتصال:', err.message);
-  });
+    client.on('error', (err) => {
+      console.error('[خطأ بالاتصال]:', err.message);
+    });
+
+  } catch (error) {
+    console.error('فشل تشغيل العميل المباشر:', error.message);
+  }
 }
 
-// تشغيل البوت
+// بدء التشغيل
 startBot();
